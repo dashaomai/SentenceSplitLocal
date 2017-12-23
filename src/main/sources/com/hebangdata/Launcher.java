@@ -39,7 +39,6 @@ public class Launcher {
 
 		final long outputBegin = System.currentTimeMillis();
 
-
 		final FileOutputStream outputStream = new FileOutputStream(outputUrl);
 		final FileChannel outputChannel = outputStream.getChannel();
 
