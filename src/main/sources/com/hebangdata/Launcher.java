@@ -3,7 +3,10 @@ package com.hebangdata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -15,19 +18,51 @@ public class Launcher {
 	private static final Logger log = LoggerFactory.getLogger("Launcher");
 
 	public static void main(String[] args) throws IOException {
+		// 先读取文件内容，并整理成为行的集合
 		final String url = "assets/百度买房语料.txt";
 		final List<String> result = new ArrayList<>();
 
-		final double begin = System.nanoTime();
+		final long begin = System.currentTimeMillis();
 
 		try (final Stream<String> stream = Files.lines(Paths.get(url), Charset.forName("UTF-8"))) {
 			stream.parallel().forEach(line -> result.addAll(split(line)));
 		}
 
-		final double end = System.nanoTime();
-		final double passed = end - begin;
+		final long end = System.currentTimeMillis();
 
-		log.info("读取：{} 耗时：{} 纳秒，获得：{} 行文本", url, passed, result.size());
+		log.info("读取：{} 耗时：{} 秒，获得：{} 行文本", url, (end - begin) / 1000L, result.size());
+
+		// 把结果写入文件内
+		final String outputUrl = "assets/百度买房语料.sentence.txt";
+		final String spliter = "\n";
+		final byte[] spliterBytes = spliter.getBytes();
+
+		final long outputBegin = System.currentTimeMillis();
+
+
+		final FileOutputStream outputStream = new FileOutputStream(outputUrl);
+		final FileChannel outputChannel = outputStream.getChannel();
+
+		final ByteBuffer outputByteBuffer = ByteBuffer.allocate(2 << 15);
+		for (final String sentence :
+				result) {
+			if (null == sentence) continue;
+
+			final byte[] finalOutput = sentence.getBytes();
+			outputByteBuffer.put(finalOutput);
+			outputByteBuffer.put(spliterBytes);
+			outputByteBuffer.flip();
+
+			outputChannel.write(outputByteBuffer);
+			outputByteBuffer.clear();
+		}
+
+		outputChannel.close();
+		outputStream.close();
+
+		final long outputEnd = System.currentTimeMillis();
+
+		log.info("写入：{} 耗时：{} 秒", outputUrl, (outputEnd - outputBegin) / 1000L);
 	}
 
 	private static List<String> split(final String line) {
@@ -58,12 +93,15 @@ public class Launcher {
 	 * @return
 	 */
 	private static boolean isSpliter(final Character chr) {
-		// 判断是不是汉字
 		final Character.UnicodeScript ub = Character.UnicodeScript.of(chr);
 
-		if (Character.UnicodeScript.HAN == ub || Character.UnicodeScript.LATIN == ub)
+		if (Character.UnicodeScript.HAN == ub || Character.UnicodeScript.LATIN == ub) // 判断是不是汉字
+			return false;
+		else if (0 <= chr.compareTo('0') && 0 >= chr.compareTo('9')) // 判断是不是数字
+			return false;
+		else if (chr.equals(' ') || chr.equals('、')) // 判断是不是空格及特别的符号
 			return false;
 		else
-			return 0 < chr.compareTo('0') || 0 > chr.compareTo('9');
+			return true;
 	}
 }
