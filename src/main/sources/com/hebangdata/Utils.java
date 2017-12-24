@@ -7,15 +7,14 @@ public class Utils {
 	public static final String SPLITER = "\n";
 	public static final byte[] SPLITER_BYTES = SPLITER.getBytes();
 
-	public static List<String> split(final String line) {
-		if (null == line) return null;
+	public static void split(final String line, final List<String> lines, final StringBuilder builder) {
+		if (null == line) return;
 
-		// 语句拆分
-		final List<String> lines = new ArrayList<>();
+		lines.clear();
+//		builder.delete(0, builder.length());
+		builder.setLength(0);
 
 		// 循环每一个字符，拆出每一个完整的句子
-		final StringBuilder builder = new StringBuilder();
-
 		for (final Character chr : line.toCharArray()) {
 			if (isSpliter(chr)) {
 				if (0 < builder.length()) {
@@ -25,14 +24,13 @@ public class Utils {
 					if (isSentence(sentence))
 						lines.add(sentence);
 
-					builder.delete(0, builder.length());
+//					builder.delete(0, builder.length());
+					builder.setLength(0);
 				}
 			} else {
 				builder.append(chr);
 			}
 		}
-
-		return lines;
 	}
 	/**
 	 * 判断一个字符是不是非句内字符
