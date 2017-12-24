@@ -26,10 +26,10 @@ public class FirstSplit {
 		final List<String> orderedSentences = parseSentences(inputUrl);
 
 		// 把未去重的结果写入文件内
-		writeOrigin(outputUrl, orderedSentences);
+		 writeOrigin(outputUrl, orderedSentences);
 
 		// 把去重后的结果写入文件内
-		writeGrouped(groupedUrl, orderedSentences);
+		 writeGrouped(groupedUrl, orderedSentences);
 	}
 
 	private static void writeGrouped(String groupedUrl, List<String> orderedSentences) throws IOException {
@@ -86,25 +86,17 @@ public class FirstSplit {
 		final FileChannel channel = stream.getChannel();
 		final ByteBuffer byteBuffer = ByteBuffer.allocate(2 << 16);
 
-		final Stream<String> pstream = sentences.parallelStream();
-		pstream.forEach((String sentence) -> {
-			if (null == sentence || 0 == sentence.length()) return;
+		for (final String sentence : sentences) {
+			if (null == sentence || 0 == sentence.length()) continue;
 
 			byteBuffer.put(sentence.getBytes());
 			byteBuffer.put(Utils.SPLITER_BYTES);
 			byteBuffer.flip();
 
-			try {
-				channel.write(byteBuffer);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} finally {
-				byteBuffer.clear();
-			}
+			channel.write(byteBuffer);
 
-		});
-
-		pstream.close();
+			byteBuffer.clear();
+		}
 
 		channel.close();
 		stream.close();
