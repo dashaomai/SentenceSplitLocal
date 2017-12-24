@@ -39,7 +39,7 @@ public class FirstSplit {
 
 		final long groupedBegin = System.currentTimeMillis();
 
-		writeSentencesIntoChannel(groupedUrl, groupedSentences);
+		Files.write(Paths.get(groupedUrl), groupedSentences);
 
 		final long groupedEnd = System.currentTimeMillis();
 
@@ -51,7 +51,7 @@ public class FirstSplit {
 	private static void writeOrigin(String outputUrl, List<String> orderedSentences) throws IOException {
 		final long outputBegin = System.currentTimeMillis();
 
-		writeSentencesIntoChannel(outputUrl, orderedSentences);
+		Files.write(Paths.get(outputUrl), orderedSentences);
 
 		final long outputEnd = System.currentTimeMillis();
 
@@ -61,14 +61,14 @@ public class FirstSplit {
 	private static List<String> parseSentences(final String inputUrl) throws IOException {
 		final long begin = System.currentTimeMillis();
 
-		final List<String> orderedSentences = new ArrayList<>();
-		final List<String> lines = new ArrayList<>();
-		final StringBuilder builder = new StringBuilder();
+		final List<String> orderedSentences = Collections.synchronizedList(new ArrayList<>());
 
 		final Stream<String> inputStream = Files.lines(Paths.get(inputUrl), Charset.forName("UTF-8")).parallel();
 
 		inputStream.forEach(line -> {
-			Utils.split(line, lines, builder);
+			final List<String> lines = new ArrayList<>();
+
+			Utils.split(line, lines);
 
 			orderedSentences.addAll(lines);
 		});
@@ -79,26 +79,5 @@ public class FirstSplit {
 
 		log.info("读取：{} 耗时：{} 秒，获得：{} 行文本", inputUrl, (end - begin) / 1000L, orderedSentences.size());
 		return orderedSentences;
-	}
-
-	private static void writeSentencesIntoChannel(String url, Collection<String> sentences) throws IOException {
-		final FileOutputStream stream = new FileOutputStream(url);
-		final FileChannel channel = stream.getChannel();
-		final ByteBuffer byteBuffer = ByteBuffer.allocate(2 << 16);
-
-		for (final String sentence : sentences) {
-			if (null == sentence || 0 == sentence.length()) continue;
-
-			byteBuffer.put(sentence.getBytes());
-			byteBuffer.put(Utils.SPLITER_BYTES);
-			byteBuffer.flip();
-
-			channel.write(byteBuffer);
-
-			byteBuffer.clear();
-		}
-
-		channel.close();
-		stream.close();
 	}
 }

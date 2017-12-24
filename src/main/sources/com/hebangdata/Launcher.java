@@ -9,10 +9,14 @@ public class Launcher {
 	private static final Logger log = LoggerFactory.getLogger("Launcher");
 
 	public static void main(String[] args) throws IOException {
-		final String inputUrl = "assets/百度买房语料.txt";
-		final String outputUrl = "assets/百度买房语料.sentence.txt";
-		final String groupedUrl = "assets/百度买房语料.grouped.txt";
-
-		FirstSplit.process(inputUrl, outputUrl, groupedUrl);
+		FirstSplit.process("assets/百度买房语料.txt", "assets/百度买房语料.sentence.txt", "assets/百度买房语料.grouped.txt");
+		FirstSplit.process("assets/网易新闻语料.txt", "assets/网易新闻语料.sentence.txt", "assets/网易新闻语料.grouped.txt");
+		FirstSplit.process("assets/网易新闻语料20171122.txt", "assets/网易新闻语料20171122.sentence.txt", "assets/网易新闻语料20171122.grouped.txt");
+		FirstSplit.process("assets/一般词全集语料.txt", "assets/一般词全集语料.sentence.txt", "assets/一般词全集语料.grouped.txt");
+		FirstSplit.process("assets/一般词全集语料1.txt", "assets/一般词全集语料1.sentence.txt", "assets/一般词全集语料1.grouped.txt");
+		FirstSplit.process("assets/一般词全集语料2.txt", "assets/一般词全集语料2.sentence.txt", "assets/一般词全集语料2.grouped.txt");
+		FirstSplit.process("assets/一般词全集语料3.txt", "assets/一般词全集语料3.sentence.txt", "assets/一般词全集语料3.grouped.txt");
+		FirstSplit.process("assets/一般词全集语料4.txt", "assets/一般词全集语料4.sentence.txt", "assets/一般词全集语料4.grouped.txt");
+		FirstSplit.process("assets/一般词全集语料5.txt", "assets/一般词全集语料5.sentence.txt", "assets/一般词全集语料5.grouped.txt");
 	}
 }

@@ -1,18 +1,15 @@
 package com.hebangdata;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Utils {
-	public static final String SPLITER = "\n";
-	public static final byte[] SPLITER_BYTES = SPLITER.getBytes();
 
-	public static void split(final String line, final List<String> lines, final StringBuilder builder) {
+	public static void split(final String line, final List<String> lines) {
 		if (null == line) return;
 
 		lines.clear();
-//		builder.delete(0, builder.length());
-		builder.setLength(0);
+
+		final StringBuilder builder = new StringBuilder();
 
 		// 循环每一个字符，拆出每一个完整的句子
 		for (final Character chr : line.toCharArray()) {
@@ -56,12 +53,13 @@ public class Utils {
 	 * @return
 	 */
 	private static boolean isSentence(final String line) {
-		for (final Character chr : line.toCharArray()) {
-			final Character.UnicodeScript ub = Character.UnicodeScript.of(chr);
+		if (line.length() > 1)
+			for (final Character chr : line.toCharArray()) {
+				final Character.UnicodeScript ub = Character.UnicodeScript.of(chr);
 
-			if (Character.UnicodeScript.HAN == ub || Character.UnicodeScript.LATIN == ub)
-				return true;
-		}
+				if (Character.UnicodeScript.HAN == ub || Character.UnicodeScript.LATIN == ub)
+					return true;
+			}
 
 		return false;
 	}
