@@ -10,10 +10,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -25,91 +22,91 @@ public class FirstSplit {
 	private static final Logger log = LoggerFactory.getLogger("FirstSplit");
 
 	public static void process(final String inputUrl, final String outputUrl, final String groupedUrl) throws IOException {
-
 		// 先读取文件内容，并整理成为行的集合
-
-		final long begin = System.currentTimeMillis();
-
-		final List<String> orderedSentences = new ArrayList<>();
-		final Set<String> groupedSentences = new HashSet<>();
-
-		final Stream<String> stream = Files.lines(Paths.get(inputUrl), Charset.forName("UTF-8"));
-
-		stream.parallel().forEach(line -> {
-			final List<String> lines = Utils.split(line);
-
-			orderedSentences.addAll(lines);
-			groupedSentences.addAll(lines);
-		});
-
-		stream.close();
-
-		final long end = System.currentTimeMillis();
-
-		log.info("读取：{} 耗时：{} 秒，获得：{} 行文本", inputUrl, (end - begin) / 1000L, groupedSentences.size());
-
-		final ByteBuffer outputByteBuffer = ByteBuffer.allocate(2 << 15);
+		final List<String> orderedSentences = parseSentences(inputUrl);
 
 		// 把未去重的结果写入文件内
-		final long outputBegin = System.currentTimeMillis();
-
-		final FileOutputStream outputStream = new FileOutputStream(groupedUrl);
-		final FileChannel outputChannel = outputStream.getChannel();
-
-		outputByteBuffer.clear();
-
-		orderedSentences.parallelStream().forEachOrdered((String sentence) -> {
-			if (null == sentence || 0 == sentence.length()) return;
-
-			outputByteBuffer.put(sentence.getBytes());
-			outputByteBuffer.put(Utils.SPLITER_BYTES);
-			outputByteBuffer.flip();
-
-			try {
-				outputChannel.write(outputByteBuffer);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} finally {
-				outputByteBuffer.clear();
-			}
-
-		});
-
-		outputChannel.close();
-		outputStream.close();
-
-		final long outputEnd = System.currentTimeMillis();
-
-		log.info("写入有序文件：{}，{} 行，耗时：{} 秒", outputUrl, orderedSentences.size(), (outputEnd - outputBegin) / 1000L);
-
-		orderedSentences.clear();
+		writeOrigin(outputUrl, orderedSentences);
 
 		// 把去重后的结果写入文件内
+		writeGrouped(groupedUrl, orderedSentences);
+	}
+
+	private static void writeGrouped(String groupedUrl, List<String> orderedSentences) throws IOException {
+		final Set<String> groupedSentences = new HashSet<>();
+		groupedSentences.addAll(orderedSentences);
+		orderedSentences.clear();
+
 		final long groupedBegin = System.currentTimeMillis();
 
-		final FileOutputStream groupedStream = new FileOutputStream(groupedUrl);
-		final FileChannel groupedChannel = groupedStream.getChannel();
-
-		outputByteBuffer.clear();
-
-		for (final String sentence : groupedSentences) {
-			if (null == sentence || 0 == sentence.length()) continue;
-
-			outputByteBuffer.put(sentence.getBytes());
-			outputByteBuffer.put(Utils.SPLITER_BYTES);
-			outputByteBuffer.flip();
-
-			groupedChannel.write(outputByteBuffer);
-			outputByteBuffer.clear();
-		}
-
-		groupedChannel.close();
-		groupedStream.close();
+		writeSentencesIntoChannel(groupedUrl, groupedSentences);
 
 		final long groupedEnd = System.currentTimeMillis();
 
 		log.info("写入去重文件：{}，{} 行，耗时：{} 秒", groupedUrl, groupedSentences.size(), (groupedEnd - groupedBegin) / 1000L);
 
 		groupedSentences.clear();
+	}
+
+	private static void writeOrigin(String outputUrl, List<String> orderedSentences) throws IOException {
+		final long outputBegin = System.currentTimeMillis();
+
+		writeSentencesIntoChannel(outputUrl, orderedSentences);
+
+		final long outputEnd = System.currentTimeMillis();
+
+		log.info("写入有序文件：{}，{} 行，耗时：{} 秒", outputUrl, orderedSentences.size(), (outputEnd - outputBegin) / 1000L);
+	}
+
+	private static List<String> parseSentences(final String inputUrl) throws IOException {
+		final long begin = System.currentTimeMillis();
+
+		final List<String> orderedSentences = new ArrayList<>();
+		final List<String> lines = new ArrayList<>();
+		final StringBuilder builder = new StringBuilder();
+
+		final Stream<String> inputStream = Files.lines(Paths.get(inputUrl), Charset.forName("UTF-8")).parallel();
+
+		inputStream.forEach(line -> {
+			Utils.split(line, lines, builder);
+
+			orderedSentences.addAll(lines);
+		});
+
+		inputStream.close();
+
+		final long end = System.currentTimeMillis();
+
+		log.info("读取：{} 耗时：{} 秒，获得：{} 行文本", inputUrl, (end - begin) / 1000L, orderedSentences.size());
+		return orderedSentences;
+	}
+
+	private static void writeSentencesIntoChannel(String url, Collection<String> sentences) throws IOException {
+		final FileOutputStream stream = new FileOutputStream(url);
+		final FileChannel channel = stream.getChannel();
+		final ByteBuffer byteBuffer = ByteBuffer.allocate(2 << 16);
+
+		final Stream<String> pstream = sentences.parallelStream();
+		pstream.forEach((String sentence) -> {
+			if (null == sentence || 0 == sentence.length()) return;
+
+			byteBuffer.put(sentence.getBytes());
+			byteBuffer.put(Utils.SPLITER_BYTES);
+			byteBuffer.flip();
+
+			try {
+				channel.write(byteBuffer);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				byteBuffer.clear();
+			}
+
+		});
+
+		pstream.close();
+
+		channel.close();
+		stream.close();
 	}
 }
