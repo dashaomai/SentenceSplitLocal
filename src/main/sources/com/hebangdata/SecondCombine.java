@@ -32,11 +32,12 @@ public class SecondCombine {
 
 		final long begin = System.currentTimeMillis();
 
-		for (final String path :
-				paths) {
+		for (final String path : paths) {
 			final Stream<String> inputStream = Files.lines(Paths.get(path + Utils.GROUPED_EXT), Charset.forName("UTF-8")).parallel();
 
 			inputStream.forEach(groupedSentences::add);
+
+			inputStream.close();
 		}
 
 		final long end = System.currentTimeMillis();
