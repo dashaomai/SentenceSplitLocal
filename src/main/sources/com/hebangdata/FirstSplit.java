@@ -21,7 +21,11 @@ import java.util.stream.Stream;
 public class FirstSplit {
 	private static final Logger log = LoggerFactory.getLogger("FirstSplit");
 
-	public static void process(final String inputUrl, final String outputUrl, final String groupedUrl) throws IOException {
+	public static void process(final String url) throws IOException {
+		final String inputUrl = url + ".txt";
+		final String outputUrl = url + ".origin.txt";
+		final String groupedUrl = url + ".group.txt";
+
 		// 先读取文件内容，并整理成为行的集合
 		final List<String> orderedSentences = parseSentences(inputUrl);
 
