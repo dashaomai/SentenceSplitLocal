@@ -11,6 +11,9 @@ public class Launcher {
 	public static void main(String[] args) throws IOException {
 		// 拆开所有的文本
 		firstSplit();
+
+		// 写回所有的去重结果
+		combine();
 	}
 
 	private static void firstSplit() throws IOException {
@@ -34,6 +37,11 @@ public class Launcher {
 	private static void combine() throws IOException {
 		final long begin = System.currentTimeMillis();
 
+		SecondCombine.process("assets/百度去重", "assets/百度买房语料");
+		SecondCombine.process("assets/百度网易去重", "assets/百度买房语料", "assets/网易新闻语料", "assets/网易新闻语料20171122");
+		SecondCombine.process("assets/所有去重", "assets/百度买房语料", "assets/网易新闻语料", "assets/网易新闻语料20171122",
+				"assets/一般词全集语料", "assets/一般词全集语料1", "assets/一般词全集语料2", "assets/一般词全集语料3",
+				"assets/一般词全集语料4", "assets/一般词全集语料5");
 
 		final long end = System.currentTimeMillis();
 

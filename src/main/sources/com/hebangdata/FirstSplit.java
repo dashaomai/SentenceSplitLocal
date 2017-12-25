@@ -3,10 +3,7 @@ package com.hebangdata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -22,9 +19,9 @@ public class FirstSplit {
 	private static final Logger log = LoggerFactory.getLogger("FirstSplit");
 
 	public static void process(final String url) throws IOException {
-		final String inputUrl = url + ".txt";
-		final String outputUrl = url + ".origin.txt";
-		final String groupedUrl = url + ".group.txt";
+		final String inputUrl = url + Utils.NORMAL_EXT;
+		final String outputUrl = url + Utils.ORIGIN_EXT;
+		final String groupedUrl = url + Utils.GROUPED_EXT;
 
 		// 先读取文件内容，并整理成为行的集合
 		final List<String> orderedSentences = parseSentences(inputUrl);

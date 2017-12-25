@@ -3,6 +3,9 @@ package com.hebangdata;
 import java.util.List;
 
 public class Utils {
+	public static final String NORMAL_EXT = ".txt";
+	public static final String ORIGIN_EXT = ".origin.txt";
+	public static final String GROUPED_EXT = ".grouped.txt";
 
 	public static void split(final String line, final List<String> lines) {
 		if (null == line) return;
