@@ -3,17 +3,18 @@ package com.hebangdata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -74,14 +75,17 @@ public class SecondCombine {
 	 * @throws IOException
 	 */
 	private static void readTheWrite(final String url, final String... paths) throws IOException {
-		final Set<Integer> groupedSentenceHashcodes = Collections.synchronizedSet(new HashSet<>());
-
 		final long begin = System.currentTimeMillis();
+
+		final Set<Integer> groupedSentenceHashcodes = Collections.synchronizedSet(new HashSet<>());
 		final AtomicInteger counter = new AtomicInteger(0);
 
-		final FileOutputStream fo = new FileOutputStream(url + Utils.GROUPED_EXT);
-		final FileChannel channel = fo.getChannel();
-		final ByteBuffer buffer = ByteBuffer.allocate(1 << 12);
+		final Path p = Paths.get(url + Utils.GROUPED_EXT);
+		final Collection<String> queue = new ConcurrentLinkedQueue<>();
+		// 清空文件内容
+		Files.write(p, queue);
+
+		final BufferedWriter writer = new BufferedWriter(new FileWriter(p.toAbsolutePath().toFile()));
 
 		for (final String path : paths) {
 			final Stream<String> inputStream = Files.lines(Paths.get(path + Utils.GROUPED_EXT), Charset.forName("UTF-8")).parallel();
@@ -93,26 +97,24 @@ public class SecondCombine {
 
 				// 如果该行字符串的 hashCode 不存在，则直接写入文件
 				if (groupedSentenceHashcodes.add(hashCode)) {
-					buffer.put(line.getBytes());
-					buffer.flip();
-
 					try {
-						channel.write(buffer);
+						writer.write(line);
+						writer.newLine();
 					} catch (IOException e) {
 						e.printStackTrace();
-					} finally {
-						buffer.clear();
 					}
 				}
 			});
+
+			log.info("已经处理文件：{}", path);
 		}
 
-		channel.close();
-		fo.close();
+		writer.flush();
+		writer.close();
 
 		final long end = System.currentTimeMillis();
 
-		log.info("读取同时写回所有文件：｛｝，读取 {} 行、写回 {} 行，耗时：{} 秒",
+		log.info("读取同时写回所有文件：{}，读取 {} 行、写回 {} 行，耗时：{} 秒",
 				paths, counter.get(), groupedSentenceHashcodes.size(), (end - begin) / 1000L);
 	}
 }
