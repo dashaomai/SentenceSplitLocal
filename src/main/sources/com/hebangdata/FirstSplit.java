@@ -34,8 +34,7 @@ public class FirstSplit {
 	}
 
 	private static void writeGrouped(String groupedUrl, List<String> orderedSentences) throws IOException {
-		final Set<String> groupedSentences = new HashSet<>();
-		groupedSentences.addAll(orderedSentences);
+		final Set<String> groupedSentences = new HashSet<>(orderedSentences);
 		orderedSentences.clear();
 
 		final long groupedBegin = System.currentTimeMillis();

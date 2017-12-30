@@ -22,7 +22,7 @@ public class Utils {
 
 					// 只有首字为汉字或者英文才被添加
 					if (isSentence(sentence))
-						lines.add(sentence);
+						lines.add(sentence.trim());
 
 //					builder.delete(0, builder.length());
 					builder.setLength(0);
