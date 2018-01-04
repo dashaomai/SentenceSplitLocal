@@ -3,11 +3,15 @@ package com.hebangdata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 /**
@@ -19,7 +23,7 @@ public class FirstSplit {
 	private static final Logger log = LoggerFactory.getLogger("FirstSplit");
 
 	public static void process(final String url) throws IOException {
-		final String inputUrl = url + Utils.NORMAL_EXT;
+		/*final String inputUrl = url + Utils.NORMAL_EXT;
 		final String outputUrl = url + Utils.ORIGIN_EXT;
 		final String groupedUrl = url + Utils.GROUPED_EXT;
 
@@ -30,7 +34,9 @@ public class FirstSplit {
 		 writeOrigin(outputUrl, orderedSentences);
 
 		// 把去重后的结果写入文件内
-		 writeGrouped(groupedUrl, orderedSentences);
+		 writeGrouped(groupedUrl, orderedSentences);*/
+
+		parseAndWrite(url);
 	}
 
 	private static void writeGrouped(String groupedUrl, List<String> orderedSentences) throws IOException {
@@ -79,5 +85,64 @@ public class FirstSplit {
 
 		log.info("读取：{} 耗时：{} 秒，获得：{} 行文本", inputUrl, (end - begin) / 1000L, orderedSentences.size());
 		return orderedSentences;
+	}
+
+	private static void parseAndWrite(final String inputUrl) throws IOException {
+		final long begin = System.currentTimeMillis();
+
+		final Set<Integer> groupedHashcode = Collections.synchronizedSet(new HashSet<>());
+		final AtomicInteger counter = new AtomicInteger(0);
+
+		final Path inputPath = Paths.get(inputUrl + Utils.NORMAL_EXT);
+		final Path originPath = Paths.get(inputUrl + Utils.ORIGIN_EXT);
+		final Path groupedPath = Paths.get(inputUrl + Utils.GROUPED_EXT);
+
+		final Stream<String> inputStream = Files.lines(inputPath, Charset.forName("UTF-8")).parallel();
+		final BufferedWriter originWriter = new BufferedWriter(new FileWriter(originPath.toAbsolutePath().toFile()));
+		final BufferedWriter groupedWriter = new BufferedWriter(new FileWriter(groupedPath.toAbsolutePath().toFile()));
+
+		inputStream.forEach(line -> {
+			final List<String> lines = new ArrayList<>();
+
+			Utils.split(line, lines);
+
+			lines.forEach(sentence -> {
+				counter.incrementAndGet();
+
+				final int hashCode = sentence.hashCode();
+
+				if (groupedHashcode.add(hashCode)) {
+					try {
+						groupedWriter.write(sentence);
+						groupedWriter.newLine();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+
+				try {
+					originWriter.write(sentence);
+					originWriter.newLine();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			});
+
+			lines.clear();
+		});
+
+		originWriter.flush();
+		originWriter.close();
+
+		groupedWriter.flush();
+		groupedWriter.close();
+
+		inputStream.close();
+
+		final long end = System.currentTimeMillis();
+
+		log.info("读取同时写回：{}；读取 {} 行，写回 {} 行，耗时：{} 秒。", inputUrl, counter.get(), groupedHashcode.size(), (end - begin) / 1000L);
+
+		groupedHashcode.clear();
 	}
 }
