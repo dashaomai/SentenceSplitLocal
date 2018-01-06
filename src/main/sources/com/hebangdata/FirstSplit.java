@@ -36,10 +36,11 @@ public class FirstSplit {
 		// 把去重后的结果写入文件内
 		 writeGrouped(groupedUrl, orderedSentences);*/
 
+    // 已修改，改为直接解析，借助 hashCode 判断去重，然后直接写入
 		parseAndWrite(url);
 	}
 
-	private static void writeGrouped(String groupedUrl, List<String> orderedSentences) throws IOException {
+	/*private static void writeGrouped(String groupedUrl, List<String> orderedSentences) throws IOException {
 		final Set<String> groupedSentences = new HashSet<>(orderedSentences);
 		orderedSentences.clear();
 
@@ -85,7 +86,7 @@ public class FirstSplit {
 
 		log.info("读取：{} 耗时：{} 秒，获得：{} 行文本", inputUrl, (end - begin) / 1000L, orderedSentences.size());
 		return orderedSentences;
-	}
+	}*/
 
 	private static void parseAndWrite(final String inputUrl) throws IOException {
 		final long begin = System.currentTimeMillis();
@@ -126,6 +127,10 @@ public class FirstSplit {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+
+        // 每处理指定句数，主动回收一次内存
+        if (counter.get() % 10000 == 0)
+          System.gc();
 			});
 
 			lines.clear();
@@ -144,5 +149,7 @@ public class FirstSplit {
 		log.info("读取同时写回：{}；读取 {} 行，写回 {} 行，耗时：{} 秒。", inputUrl, counter.get(), groupedHashcode.size(), (end - begin) / 1000L);
 
 		groupedHashcode.clear();
+
+    System.gc();
 	}
 }
