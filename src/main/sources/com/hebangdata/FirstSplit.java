@@ -89,6 +89,8 @@ public class FirstSplit {
 	}*/
 
 	private static void parseAndWrite(final String inputUrl) throws IOException {
+    log.info("开始处理：{}.txt", inputUrl);
+
 		final long begin = System.currentTimeMillis();
 
 		final Set<Integer> groupedHashcode = Collections.synchronizedSet(new HashSet<>());
@@ -108,7 +110,12 @@ public class FirstSplit {
 			Utils.split(line, lines);
 
 			lines.forEach(sentence -> {
-				counter.incrementAndGet();
+        // 每处理指定句数，主动回收一次内存
+				if (counter.incrementAndGet() % 100000 == 0) {
+          log.info("主动呼叫垃圾回收。");
+
+          System.gc();
+        }
 
 				final int hashCode = sentence.hashCode();
 
@@ -127,10 +134,6 @@ public class FirstSplit {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-
-        // 每处理指定句数，主动回收一次内存
-        if (counter.get() % 10000 == 0)
-          System.gc();
 			});
 
 			lines.clear();
